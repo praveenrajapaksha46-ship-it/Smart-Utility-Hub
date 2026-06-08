@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Smart Utility Hub - All-in-one location, music, files, notes, tasks, calendar, weather and more.">
+  <meta name="theme-color" content="#6366f1">
+  <title>Smart Utility Hub</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Mobile overlay for sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="logo">
+        <i class="fas fa-bolt" aria-hidden="true"></i>
+        <span data-i18n="appName">Smart Utility Hub</span>
+      </div>
+      <button class="btn-icon sidebar-close" id="sidebarClose" aria-label="Close menu">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <nav class="sidebar-nav" role="navigation">
+      <a href="#dashboard" class="nav-item active" data-section="dashboard">
+        <i class="fas fa-gauge-high"></i><span data-i18n="nav.dashboard">Dashboard</span>
+      </a>
+      <a href="#location" class="nav-item" data-section="location">
+        <i class="fas fa-location-dot"></i><span data-i18n="nav.location">Location</span>
+      </a>
+      <a href="#music" class="nav-item" data-section="music">
+        <i class="fas fa-music"></i><span data-i18n="nav.music">Music</span>
+      </a>
+      <a href="#files" class="nav-item" data-section="files">
+        <i class="fas fa-folder-open"></i><span data-i18n="nav.files">Files</span>
+      </a>
+      <a href="#notes" class="nav-item" data-section="notes">
+        <i class="fas fa-note-sticky"></i><span data-i18n="nav.notes">Notes</span>
+      </a>
+      <a href="#tasks" class="nav-item" data-section="tasks">
+        <i class="fas fa-list-check"></i><span data-i18n="nav.tasks">Tasks</span>
+      </a>
+      <a href="#calendar" class="nav-item" data-section="calendar">
+        <i class="fas fa-calendar-days"></i><span data-i18n="nav.calendar">Calendar</span>
+      </a>
+      <a href="#weather" class="nav-item" data-section="weather">
+        <i class="fas fa-cloud-sun"></i><span data-i18n="nav.weather">Weather</span>
+      </a>
+      <a href="#gallery" class="nav-item" data-section="gallery">
+        <i class="fas fa-images"></i><span data-i18n="nav.gallery">Gallery</span>
+      </a>
+      <a href="#qr" class="nav-item" data-section="qr">
+        <i class="fas fa-qrcode"></i><span data-i18n="nav.qr">QR Tools</span>
+      </a>
+      <a href="#settings" class="nav-item" data-section="settings">
+        <i class="fas fa-gear"></i><span data-i18n="nav.settings">Settings</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <p class="version">v1.0.0</p>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="btn-icon menu-toggle" id="menuToggle" aria-label="Open menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1 class="page-title" id="pageTitle" data-i18n="nav.dashboard">Dashboard</h1>
+      <div class="topbar-actions">
+        <button class="btn-icon theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button class="btn-icon" id="notifBtn" aria-label="Notifications">
+          <i class="fas fa-bell"></i>
+          <span class="badge" id="notifBadge" hidden>0</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="mainContent">
+      <!-- Dashboard Section -->
+      <section class="section active" id="section-dashboard" data-section="dashboard">
+        <div class="stats-grid" id="dashboardStats"></div>
+        <div class="grid-2">
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="dashboard.activity">Activity Overview</h3></div>
+            <div class="card-body chart-container"><canvas id="activityChart"></canvas></div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="dashboard.storage">Storage Usage</h3></div>
+            <div class="card-body chart-container"><canvas id="storageChart"></canvas></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="dashboard.shortcuts">Quick Shortcuts</h3></div>
+            <div class="card-body shortcuts-grid" id="shortcutsGrid"></div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="dashboard.recent">Recent Actions</h3></div>
+            <div class="card-body"><ul class="activity-list" id="recentActions"></ul></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Location Section -->
+      <section class="section" id="section-location" data-section="location">
+        <div class="grid-2 location-grid">
+          <div class="card glass">
+            <div class="card-header">
+              <h3 data-i18n="location.live">Live Tracking</h3>
+              <div class="btn-group">
+                <button class="btn btn-primary" id="startTracking"><i class="fas fa-play"></i> <span data-i18n="location.start">Start</span></button>
+                <button class="btn btn-secondary" id="stopTracking" disabled><i class="fas fa-stop"></i> <span data-i18n="location.stop">Stop</span></button>
+                <button class="btn btn-accent" id="shareLocation"><i class="fas fa-share-nodes"></i> <span data-i18n="location.share">Share</span></button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="location-stats">
+                <div class="stat-pill"><i class="fas fa-crosshairs"></i><div><span data-i18n="location.lat">Latitude</span><strong id="locLat">—</strong></div></div>
+                <div class="stat-pill"><i class="fas fa-crosshairs"></i><div><span data-i18n="location.lng">Longitude</span><strong id="locLng">—</strong></div></div>
+                <div class="stat-pill"><i class="fas fa-bullseye"></i><div><span data-i18n="location.accuracy">Accuracy</span><strong id="locAccuracy">—</strong></div></div>
+                <div class="stat-pill"><i class="fas fa-gauge"></i><div><span data-i18n="location.speed">Speed</span><strong id="locSpeed">—</strong></div></div>
+              </div>
+              <div class="share-box" id="shareBox" hidden>
+                <label data-i18n="location.shareLink">Share Link</label>
+                <div class="input-group">
+                  <input type="text" id="shareLinkInput" readonly>
+                  <button class="btn btn-secondary" id="copyShareLink"><i class="fas fa-copy"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card glass map-card">
+            <div class="card-header"><h3 data-i18n="location.map">Interactive Map</h3></div>
+            <div class="card-body no-padding"><div id="locationMap" class="map-container"></div></div>
+          </div>
+        </div>
+        <div class="card glass">
+          <div class="card-header"><h3 data-i18n="location.history">Location History</h3>
+            <button class="btn btn-sm btn-secondary" id="clearLocHistory"><i class="fas fa-trash"></i> <span data-i18n="common.clear">Clear</span></button>
+          </div>
+          <div class="card-body"><div class="table-wrap"><table class="data-table" id="locHistoryTable"><thead><tr>
+            <th data-i18n="location.time">Time</th><th data-i18n="location.lat">Lat</th><th data-i18n="location.lng">Lng</th><th data-i18n="location.speed">Speed</th><th data-i18n="location.accuracy">Accuracy</th>
+          </tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </section>
+
+      <!-- Music Section -->
+      <section class="section" id="section-music" data-section="music">
+        <div class="grid-2 music-layout">
+          <div class="card glass music-player-card">
+            <div class="card-body">
+              <div class="album-art" id="albumArt"><i class="fas fa-music"></i></div>
+              <h3 class="track-title" id="trackTitle" data-i18n="music.noTrack">No track selected</h3>
+              <p class="track-artist" id="trackArtist">—</p>
+              <canvas id="audioVisualizer" class="visualizer" width="400" height="80"></canvas>
+              <div class="progress-wrap">
+                <span id="currentTime">0:00</span>
+                <input type="range" id="progressBar" min="0" max="100" value="0" class="progress-slider">
+                <span id="totalTime">0:00</span>
+              </div>
+              <div class="player-controls">
+                <button class="btn-icon" id="shuffleBtn" title="Shuffle"><i class="fas fa-shuffle"></i></button>
+                <button class="btn-icon" id="prevBtn"><i class="fas fa-backward-step"></i></button>
+                <button class="btn-icon btn-play" id="playPauseBtn"><i class="fas fa-play"></i></button>
+                <button class="btn-icon" id="nextBtn"><i class="fas fa-forward-step"></i></button>
+                <button class="btn-icon" id="repeatBtn" title="Repeat"><i class="fas fa-repeat"></i></button>
+              </div>
+              <div class="volume-wrap">
+                <i class="fas fa-volume-low"></i>
+                <input type="range" id="volumeSlider" min="0" max="100" value="80" class="volume-slider">
+              </div>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header">
+              <h3 data-i18n="music.playlist">Playlist</h3>
+              <label class="btn btn-primary btn-sm upload-btn">
+                <i class="fas fa-upload"></i> <span data-i18n="music.upload">Upload MP3</span>
+                <input type="file" id="musicUpload" accept="audio/mpeg,audio/mp3,.mp3" multiple hidden>
+              </label>
+            </div>
+            <div class="card-body">
+              <ul class="playlist" id="playlist"></ul>
+              <h4 class="sub-heading" data-i18n="music.recent">Recently Played</h4>
+              <ul class="playlist recent-list" id="recentPlayed"></ul>
+            </div>
+          </div>
+        </div>
+        <audio id="audioPlayer" preload="metadata"></audio>
+      </section>
+
+      <!-- Files Section -->
+      <section class="section" id="section-files" data-section="files">
+        <div class="card glass">
+          <div class="card-header">
+            <h3 data-i18n="files.manager">File Manager</h3>
+            <div class="btn-group">
+              <button class="btn btn-secondary" id="newFolderBtn"><i class="fas fa-folder-plus"></i> <span data-i18n="files.newFolder">New Folder</span></button>
+              <label class="btn btn-primary upload-btn">
+                <i class="fas fa-upload"></i> <span data-i18n="files.upload">Upload</span>
+                <input type="file" id="fileUpload" multiple hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="files-toolbar">
+              <div class="breadcrumb" id="fileBreadcrumb"></div>
+              <input type="search" class="search-input" id="fileSearch" data-i18n-placeholder="files.search" placeholder="Search files...">
+            </div>
+            <div class="drop-zone" id="fileDropZone">
+              <i class="fas fa-cloud-arrow-up"></i>
+              <p data-i18n="files.drop">Drag & drop files here</p>
+            </div>
+            <div class="storage-bar-wrap">
+              <div class="storage-bar"><div class="storage-fill" id="storageFill"></div></div>
+              <span id="storageText">0 B / —</span>
+            </div>
+            <div class="file-grid" id="fileGrid"></div>
+          </div>
+        </div>
+        <div class="modal" id="filePreviewModal" hidden>
+          <div class="modal-content glass">
+            <button class="modal-close" data-close-modal>&times;</button>
+            <div id="filePreviewContent"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notes Section -->
+      <section class="section" id="section-notes" data-section="notes">
+        <div class="grid-2 notes-layout">
+          <div class="card glass">
+            <div class="card-header">
+              <h3 data-i18n="notes.title">My Notes</h3>
+              <button class="btn btn-primary btn-sm" id="newNoteBtn"><i class="fas fa-plus"></i> <span data-i18n="notes.new">New Note</span></button>
+            </div>
+            <div class="card-body">
+              <input type="search" class="search-input" id="noteSearch" data-i18n-placeholder="notes.search" placeholder="Search notes...">
+              <ul class="notes-list" id="notesList"></ul>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="notes.editor">Editor</h3></div>
+            <div class="card-body">
+              <input type="text" class="input-title" id="noteTitle" data-i18n-placeholder="notes.noteTitle" placeholder="Note title">
+              <div class="editor-toolbar" id="noteToolbar">
+                <button type="button" data-cmd="bold"><i class="fas fa-bold"></i></button>
+                <button type="button" data-cmd="italic"><i class="fas fa-italic"></i></button>
+                <button type="button" data-cmd="underline"><i class="fas fa-underline"></i></button>
+                <button type="button" data-cmd="insertUnorderedList"><i class="fas fa-list-ul"></i></button>
+                <button type="button" data-cmd="insertOrderedList"><i class="fas fa-list-ol"></i></button>
+                <button type="button" data-cmd="formatBlock" data-value="h2"><i class="fas fa-heading"></i></button>
+              </div>
+              <div class="rich-editor" id="noteEditor" contenteditable="true" data-i18n-placeholder="notes.placeholder" data-placeholder="Start writing..."></div>
+              <div class="editor-actions">
+                <button class="btn btn-primary" id="saveNoteBtn"><i class="fas fa-save"></i> <span data-i18n="common.save">Save</span></button>
+                <button class="btn btn-danger" id="deleteNoteBtn"><i class="fas fa-trash"></i> <span data-i18n="common.delete">Delete</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tasks Section -->
+      <section class="section" id="section-tasks" data-section="tasks">
+        <div class="card glass">
+          <div class="card-header">
+            <h3 data-i18n="tasks.title">Task Manager</h3>
+            <div class="filter-tabs">
+              <button class="tab active" data-filter="all" data-i18n="tasks.all">All</button>
+              <button class="tab" data-filter="active" data-i18n="tasks.active">Active</button>
+              <button class="tab" data-filter="completed" data-i18n="tasks.completed">Completed</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <form class="task-form" id="taskForm">
+              <input type="text" id="taskInput" data-i18n-placeholder="tasks.add" placeholder="Add a new task..." required>
+              <select id="taskPriority">
+                <option value="low" data-i18n="tasks.low">Low</option>
+                <option value="medium" selected data-i18n="tasks.medium">Medium</option>
+                <option value="high" data-i18n="tasks.high">High</option>
+              </select>
+              <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+            </form>
+            <ul class="task-list" id="taskList"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Calendar Section -->
+      <section class="section" id="section-calendar" data-section="calendar">
+        <div class="grid-2 calendar-layout">
+          <div class="card glass">
+            <div class="card-header">
+              <button class="btn-icon" id="calPrev"><i class="fas fa-chevron-left"></i></button>
+              <h3 id="calMonthYear"></h3>
+              <button class="btn-icon" id="calNext"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="card-body">
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="calendar.events">Events</h3></div>
+            <div class="card-body">
+              <form id="eventForm" class="event-form">
+                <input type="text" id="eventTitle" data-i18n-placeholder="calendar.eventTitle" placeholder="Event title" required>
+                <input type="date" id="eventDate" required>
+                <input type="time" id="eventTime">
+                <label class="checkbox-label"><input type="checkbox" id="eventReminder"> <span data-i18n="calendar.reminder">Reminder</span></label>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> <span data-i18n="calendar.addEvent">Add Event</span></button>
+              </form>
+              <ul class="event-list" id="eventList"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Weather Section -->
+      <section class="section" id="section-weather" data-section="weather">
+        <div class="weather-header card glass">
+          <div class="card-body weather-search">
+            <input type="text" id="weatherCity" placeholder="City name" data-i18n-placeholder="weather.city">
+            <button class="btn btn-primary" id="weatherSearch"><i class="fas fa-search"></i> <span data-i18n="weather.search">Search</span></button>
+            <button class="btn btn-secondary" id="weatherGPS"><i class="fas fa-location-crosshairs"></i> <span data-i18n="weather.useGPS">Use GPS</span></button>
+          </div>
+        </div>
+        <div class="weather-current card glass" id="weatherCurrent">
+          <div class="card-body loading" data-i18n="weather.loading">Loading weather...</div>
+        </div>
+        <div class="forecast-grid" id="forecastGrid"></div>
+      </section>
+
+      <!-- Gallery Section -->
+      <section class="section" id="section-gallery" data-section="gallery">
+        <div class="card glass">
+          <div class="card-header">
+            <h3 data-i18n="gallery.title">Media Gallery</h3>
+            <div class="btn-group">
+              <label class="btn btn-primary btn-sm upload-btn">
+                <i class="fas fa-image"></i> <span data-i18n="gallery.upload">Upload Media</span>
+                <input type="file" id="galleryUpload" accept="image/*,video/*" multiple hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="filter-tabs gallery-tabs">
+              <button class="tab active" data-gallery="all" data-i18n="gallery.all">All</button>
+              <button class="tab" data-gallery="image" data-i18n="gallery.images">Images</button>
+              <button class="tab" data-gallery="video" data-i18n="gallery.videos">Videos</button>
+            </div>
+            <input type="search" class="search-input" id="gallerySearch" data-i18n-placeholder="gallery.search" placeholder="Search media...">
+            <div class="gallery-grid" id="galleryGrid"></div>
+          </div>
+        </div>
+        <div class="lightbox" id="lightbox" hidden>
+          <button class="lightbox-close" id="lightboxClose">&times;</button>
+          <button class="lightbox-nav prev" id="lightboxPrev"><i class="fas fa-chevron-left"></i></button>
+          <div class="lightbox-content" id="lightboxContent"></div>
+          <button class="lightbox-nav next" id="lightboxNext"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </section>
+
+      <!-- QR Tools Section -->
+      <section class="section" id="section-qr" data-section="qr">
+        <div class="grid-2">
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="qr.generate">QR Generator</h3></div>
+            <div class="card-body qr-gen">
+              <textarea id="qrText" rows="4" data-i18n-placeholder="qr.enterText" placeholder="Enter text or URL..."></textarea>
+              <button class="btn btn-primary" id="generateQR"><i class="fas fa-qrcode"></i> <span data-i18n="qr.generateBtn">Generate</span></button>
+              <div id="qrOutput" class="qr-output"></div>
+              <button class="btn btn-secondary" id="downloadQR" hidden><i class="fas fa-download"></i> <span data-i18n="qr.download">Download</span></button>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="qr.scan">QR Scanner</h3></div>
+            <div class="card-body qr-scan">
+              <div id="qrReader" class="qr-reader"></div>
+              <p class="scan-result" id="scanResult" data-i18n="qr.scanHint">Point camera at a QR code</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section class="section" id="section-settings" data-section="settings">
+        <div class="settings-grid">
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="settings.appearance">Appearance</h3></div>
+            <div class="card-body settings-list">
+              <div class="setting-item">
+                <span data-i18n="settings.theme">Theme</span>
+                <select id="themeSelect">
+                  <option value="dark" data-i18n="settings.dark">Dark</option>
+                  <option value="light" data-i18n="settings.light">Light</option>
+                  <option value="auto" data-i18n="settings.auto">Auto</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <span data-i18n="settings.accent">Accent Color</span>
+                <input type="color" id="accentColor" value="#6366f1">
+              </div>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="settings.language">Language</h3></div>
+            <div class="card-body settings-list">
+              <div class="setting-item">
+                <span data-i18n="settings.lang">Interface Language</span>
+                <select id="languageSelect">
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="settings.preferences">Preferences</h3></div>
+            <div class="card-body settings-list">
+              <div class="setting-item">
+                <span data-i18n="settings.animations">Animations</span>
+                <label class="switch"><input type="checkbox" id="animationsToggle" checked><span class="slider"></span></label>
+              </div>
+              <div class="setting-item">
+                <span data-i18n="settings.notifications">Notifications</span>
+                <label class="switch"><input type="checkbox" id="notificationsToggle" checked><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-header"><h3 data-i18n="settings.data">Data Management</h3></div>
+            <div class="card-body">
+              <button class="btn btn-secondary" id="exportData"><i class="fas fa-file-export"></i> <span data-i18n="settings.export">Export Data</span></button>
+              <button class="btn btn-danger" id="clearAllData"><i class="fas fa-trash"></i> <span data-i18n="settings.clearAll">Clear All Data</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- External Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- App Script (ES Module entry) -->
+  <script type="module" src="js/script.js"></script>
+</body>
+</html>
